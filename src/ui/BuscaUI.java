@@ -1,100 +1,102 @@
 package ui;
 
+import strategy.SearchStrategy;
+
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.List;
-import java.util.logging.Logger;
-import service.FileSearcher;
-import service.NameFinder;
 
-public class BuscaUI extends JFrame {
+public class BuscaUI {
 
-    private static final Logger LOGGER = Logger.getLogger(BuscaUI.class.getName());
-    
-    private JTextField txtNome;
-    private JButton btnBuscar;
-    private JTextArea txtAreaResultados;
-    
-    private final File diretorioData = new File("Data/Dataset_P");
+    private final JFrame frame;
+    private final JTextField nomeField;
+    private final JTextArea outputArea;
+    private final JComboBox<SearchStrategy> estrategiaComboBox;
+    private final JComboBox<String> datasetComboBox;
 
-    public BuscaUI() {
-        super("Busca de Nomes em Arquivos");
-        inicializarComponentes();
-        configurarJanela();
-    }
+    public BuscaUI(List<SearchStrategy> estrategias) {
+        frame = new JFrame("Buscador de Nomes");
+        nomeField = new JTextField(20);
+        outputArea = new JTextArea(15, 40);
+        estrategiaComboBox = new JComboBox<>();
+        datasetComboBox = new JComboBox<>();
 
-    private void inicializarComponentes() {
-        txtNome = new JTextField(20);
-        btnBuscar = new JButton("Buscar Nome");
-        txtAreaResultados = new JTextArea(15, 40);
-        txtAreaResultados.setEditable(false);
-        
-        JPanel painelInput = new JPanel();
-        painelInput.add(new JLabel("Nome a buscar:"));
-        painelInput.add(txtNome);
-        painelInput.add(btnBuscar);
-
-        this.setLayout(new BorderLayout());
-        this.add(painelInput, BorderLayout.NORTH);
-        this.add(new JScrollPane(txtAreaResultados), BorderLayout.CENTER);
-
-        if (diretorioData.exists() && diretorioData.isDirectory()){
-            String msg = "Diretório utilizado: " + diretorioData.getAbsolutePath();
-            txtAreaResultados.append(msg + "\n");
-            LOGGER.info(msg);
-        } else {
-            String msg = "Pasta 'Data' não encontrada!";
-            txtAreaResultados.append(msg + "\n");
-            LOGGER.severe(msg);
+        // Preenche o ComboBox com as estratégias
+        for (SearchStrategy estrategia : estrategias) {
+            estrategiaComboBox.addItem(estrategia);
         }
 
-        btnBuscar.addActionListener((ActionEvent e) -> {
-            LOGGER.info("Botão 'Buscar Nome' acionado.");
-            if (!diretorioData.exists() || !diretorioData.isDirectory()) {
-                JOptionPane.showMessageDialog(this, "A pasta 'Data' não foi encontrada no diretório do projeto!");
-                LOGGER.severe("Diretório 'Data' não encontrado.");
-                return;
-            }
-            String nomeProcurado = txtNome.getText().trim();
-            if (nomeProcurado.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Por favor, digite o nome a buscar!");
-                LOGGER.warning("Campo de busca vazio.");
-                return;
-            }
-            
-            txtAreaResultados.append("\nIniciando busca por: " + nomeProcurado + "\n");
-            txtAreaResultados.append("------------------------------\n");
-            LOGGER.info("Iniciando busca por: " + nomeProcurado);
+        // Preenche o ComboBox para seleção de dataset
+        // Opções: Apenas Dataset_P, Apenas Dataset_G, Ambos
+        datasetComboBox.addItem("Dataset_P");
+        datasetComboBox.addItem("Dataset_G");
+        datasetComboBox.addItem("Ambos");
 
-            List<File> listaArquivos = FileSearcher.buscarArquivosTxt(diretorioData);
-            LOGGER.info("Total de arquivos .txt encontrados: " + listaArquivos.size());
-            if (listaArquivos.isEmpty()){
-                txtAreaResultados.append("Nenhum arquivo .txt encontrado na pasta 'Data'.\n");
-                LOGGER.warning("Nenhum arquivo .txt encontrado.");
-                return;
-            }
-
-            for (File arquivo : listaArquivos) {
-                int linhaEncontrada = NameFinder.buscarNomeEmArquivo(arquivo, nomeProcurado);
-                if (linhaEncontrada != -1) {
-                    String resultado = "Nome encontrado no arquivo: " + arquivo.getName() + " na linha: " + linhaEncontrada;
-                    txtAreaResultados.append(resultado + "\n");
-                    LOGGER.info(resultado);
-                } else {
-                    LOGGER.fine("Nome não encontrado em: " + arquivo.getName());
-                }
-            }
-            txtAreaResultados.append("Busca finalizada.\n");
-            LOGGER.info("Busca finalizada.");
-        });
+        setupUI();
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.pack();
+        frame.setVisible(true);
     }
 
-    private void configurarJanela() {
-        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.pack();
-        this.setLocationRelativeTo(null);
-        this.setVisible(true);
+    private void setupUI() {
+        JPanel panel = new JPanel(new BorderLayout());
+        JPanel inputPanel = new JPanel();
+
+        JButton buscarButton = new JButton("Buscar");
+
+        // Adiciona os componentes de entrada: campo nome, escolha de estratégia e dataset
+        inputPanel.add(new JLabel("Nome a buscar:"));
+        inputPanel.add(nomeField);
+        inputPanel.add(new JLabel("Algoritmo:"));
+        inputPanel.add(estrategiaComboBox);
+        inputPanel.add(new JLabel("Dataset:"));
+        inputPanel.add(datasetComboBox);
+        inputPanel.add(buscarButton);
+
+        outputArea.setEditable(false);
+        outputArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        JScrollPane scrollPane = new JScrollPane(outputArea);
+
+        panel.add(inputPanel, BorderLayout.NORTH);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        frame.setContentPane(panel);
+
+        buscarButton.addActionListener(e -> executarBusca());
+    }
+
+    private void executarBusca() {
+        outputArea.setText(""); // limpa logs
+
+        String nome = nomeField.getText().trim();
+        if (nome.isEmpty()) {
+            outputArea.append("⚠️ Por favor, insira um nome para buscar.\n");
+            return;
+        }
+
+        // Define o diretório com base na seleção de dataset
+        String datasetSelecionado = (String) datasetComboBox.getSelectedItem();
+        File pastaData;
+        if ("Dataset_P".equals(datasetSelecionado)) {
+            pastaData = new File("Data/Dataset_P");
+        } else if ("Dataset_G".equals(datasetSelecionado)) {
+            pastaData = new File("Data/Dataset_G");
+        } else { // "Ambos"
+            pastaData = new File("Data");
+        }
+
+        if (!pastaData.exists() || !pastaData.isDirectory()) {
+            outputArea.append("❌ Pasta " + pastaData.getPath() + " não encontrada!\n");
+            return;
+        }
+
+        // Seleciona a estratégia de busca escolhida
+        SearchStrategy estrategiaSelecionada = (SearchStrategy) estrategiaComboBox.getSelectedItem();
+        if (estrategiaSelecionada != null) {
+            outputArea.append("🔍 Usando estratégia: " + estrategiaSelecionada.toString() + "\n");
+            outputArea.append("📂 Dataset selecionado: " + datasetSelecionado + "\n");
+            estrategiaSelecionada.search(pastaData, nome, outputArea);
+        }
     }
 }

@@ -1,12 +1,16 @@
 package app;
 
-import ui.BuscaUI;
-import ui.ColorFormatter;
-
+import java.util.List;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import strategy.ParallelSearch;
+import strategy.SearchStrategy;
+import strategy.SequencialSearch;
+import ui.BuscaUI;
+import ui.ColorFormatter;
 
 public class Main {
     private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
@@ -25,7 +29,12 @@ public class Main {
         LOGGER.info("Iniciando a aplicação de busca de nomes...");
 
         javax.swing.SwingUtilities.invokeLater(() -> {
-            new BuscaUI();
+        	List<SearchStrategy> estrategias = List.of(
+        		    new SequencialSearch(),
+        		    new ParallelSearch()
+        		);
+        		BuscaUI ui = new BuscaUI(estrategias);
+
             LOGGER.info("Interface gráfica criada com sucesso.");
         });
     }
