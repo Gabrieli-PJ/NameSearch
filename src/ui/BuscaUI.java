@@ -5,12 +5,14 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.List;
+import java.util.logging.Logger;
 import service.FileSearcher;
 import service.NameFinder;
 
 public class BuscaUI extends JFrame {
 
-    // Componentes de interface
+    private static final Logger LOGGER = Logger.getLogger(BuscaUI.class.getName());
+    
     private JTextField txtNome;
     private JButton btnBuscar;
     private JTextArea txtAreaResultados;
@@ -38,39 +40,54 @@ public class BuscaUI extends JFrame {
         this.add(painelInput, BorderLayout.NORTH);
         this.add(new JScrollPane(txtAreaResultados), BorderLayout.CENTER);
 
-        if(diretorioData.exists() && diretorioData.isDirectory()){
-            txtAreaResultados.append("Diretório utilizado: " + diretorioData.getAbsolutePath() + "\n");
+        if (diretorioData.exists() && diretorioData.isDirectory()){
+            String msg = "Diretório utilizado: " + diretorioData.getAbsolutePath();
+            txtAreaResultados.append(msg + "\n");
+            LOGGER.info(msg);
         } else {
-            txtAreaResultados.append("Pasta 'Data' não encontrada!\n");
+            String msg = "Pasta 'Data' não encontrada!";
+            txtAreaResultados.append(msg + "\n");
+            LOGGER.severe(msg);
         }
 
         btnBuscar.addActionListener((ActionEvent e) -> {
+            LOGGER.info("Botão 'Buscar Nome' acionado.");
             if (!diretorioData.exists() || !diretorioData.isDirectory()) {
                 JOptionPane.showMessageDialog(this, "A pasta 'Data' não foi encontrada no diretório do projeto!");
+                LOGGER.severe("Diretório 'Data' não encontrado.");
                 return;
             }
             String nomeProcurado = txtNome.getText().trim();
             if (nomeProcurado.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Por favor, digite o nome a buscar!");
+                LOGGER.warning("Campo de busca vazio.");
                 return;
             }
             
             txtAreaResultados.append("\nIniciando busca por: " + nomeProcurado + "\n");
             txtAreaResultados.append("------------------------------\n");
+            LOGGER.info("Iniciando busca por: " + nomeProcurado);
 
             List<File> listaArquivos = FileSearcher.buscarArquivosTxt(diretorioData);
-            if(listaArquivos.isEmpty()){
+            LOGGER.info("Total de arquivos .txt encontrados: " + listaArquivos.size());
+            if (listaArquivos.isEmpty()){
                 txtAreaResultados.append("Nenhum arquivo .txt encontrado na pasta 'Data'.\n");
+                LOGGER.warning("Nenhum arquivo .txt encontrado.");
                 return;
             }
-            
+
             for (File arquivo : listaArquivos) {
                 int linhaEncontrada = NameFinder.buscarNomeEmArquivo(arquivo, nomeProcurado);
                 if (linhaEncontrada != -1) {
-                    txtAreaResultados.append("Nome encontrado no arquivo: " + arquivo.getName() + " na linha: " + linhaEncontrada + "\n");
+                    String resultado = "Nome encontrado no arquivo: " + arquivo.getName() + " na linha: " + linhaEncontrada;
+                    txtAreaResultados.append(resultado + "\n");
+                    LOGGER.info(resultado);
+                } else {
+                    LOGGER.fine("Nome não encontrado em: " + arquivo.getName());
                 }
             }
             txtAreaResultados.append("Busca finalizada.\n");
+            LOGGER.info("Busca finalizada.");
         });
     }
 
