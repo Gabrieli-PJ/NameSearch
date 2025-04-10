@@ -1,35 +1,28 @@
 package service;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
+import javax.swing.*;
+import java.io.*;
 
 public class FileSearcher {
-    
-    private static final Logger LOGGER = Logger.getLogger(FileSearcher.class.getName());
-    
-    public static List<File> buscarArquivosTxt(File diretorio) {
-        List<File> arquivosTxt = new ArrayList<>();
-        if (diretorio != null && diretorio.isDirectory()) {
-            LOGGER.info("Buscando arquivos em: " + diretorio.getAbsolutePath());
-            File[] arquivos = diretorio.listFiles();
-            if (arquivos != null) {
-                for (File arq : arquivos) {
-                    if (arq.isDirectory()) {
-                        LOGGER.info("Entrando no diretório: " + arq.getAbsolutePath());
-                        arquivosTxt.addAll(buscarArquivosTxt(arq));
-                    } else if (arq.getName().toLowerCase().endsWith(".txt")) {
-                        LOGGER.info("Arquivo .txt encontrado: " + arq.getName());
-                        arquivosTxt.add(arq);
-                    }
+
+    public static boolean searchFile(File file, String targetName, JTextArea logArea) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            int lineCount = 0;
+
+            while ((line = reader.readLine()) != null) {
+                lineCount++;
+                if (line.trim().equalsIgnoreCase(targetName)) {
+                    logArea.append("[✔️ ENCONTRADO] '" + targetName + "' encontrado no arquivo: " + file.getName() + " (linha " + lineCount + ")\n");
+                    return true;
                 }
-            } else {
-                LOGGER.warning("Nenhum arquivo encontrado em: " + diretorio.getAbsolutePath());
             }
-        } else {
-            LOGGER.severe("O caminho fornecido não é um diretório: " + diretorio);
+
+            logArea.append("[🔍] '" + targetName + "' **não** encontrado no arquivo: " + file.getName() + "\n");
+        } catch (IOException e) {
+            logArea.append("[ERRO] Falha ao ler o arquivo: " + file.getName() + "\n");
         }
-        return arquivosTxt;
+
+        return false;
     }
 }

@@ -5,6 +5,7 @@ import strategy.SearchStrategy;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 public class BuscaUI {
@@ -20,22 +21,17 @@ public class BuscaUI {
         nomeField = new JTextField(20);
         outputArea = new JTextArea(15, 40);
         estrategiaComboBox = new JComboBox<>();
-        datasetComboBox = new JComboBox<>();
-
-        // Preenche o ComboBox com as estratégias
+        String[] datasetOptions = {"Dataset_P", "Dataset_G", "Ambos"};
+        datasetComboBox = new JComboBox<>(datasetOptions);
+        
         for (SearchStrategy estrategia : estrategias) {
             estrategiaComboBox.addItem(estrategia);
         }
 
-        // Preenche o ComboBox para seleção de dataset
-        // Opções: Apenas Dataset_P, Apenas Dataset_G, Ambos
-        datasetComboBox.addItem("Dataset_P");
-        datasetComboBox.addItem("Dataset_G");
-        datasetComboBox.addItem("Ambos");
-
         setupUI();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
@@ -45,7 +41,6 @@ public class BuscaUI {
 
         JButton buscarButton = new JButton("Buscar");
 
-        // Adiciona os componentes de entrada: campo nome, escolha de estratégia e dataset
         inputPanel.add(new JLabel("Nome a buscar:"));
         inputPanel.add(nomeField);
         inputPanel.add(new JLabel("Algoritmo:"));
@@ -67,36 +62,50 @@ public class BuscaUI {
     }
 
     private void executarBusca() {
-        outputArea.setText(""); // limpa logs
+        outputArea.setText("");
+        String targetName = nomeField.getText().trim();
 
-        String nome = nomeField.getText().trim();
-        if (nome.isEmpty()) {
+        if (targetName.isEmpty()) {
             outputArea.append("⚠️ Por favor, insira um nome para buscar.\n");
             return;
         }
 
-        // Define o diretório com base na seleção de dataset
-        String datasetSelecionado = (String) datasetComboBox.getSelectedItem();
-        File pastaData;
-        if ("Dataset_P".equals(datasetSelecionado)) {
-            pastaData = new File("Data/Dataset_P");
-        } else if ("Dataset_G".equals(datasetSelecionado)) {
-            pastaData = new File("Data/Dataset_G");
-        } else { // "Ambos"
-            pastaData = new File("Data");
+        String selectedDataset = (String) datasetComboBox.getSelectedItem();
+        List<File> selectedDirectories = new ArrayList<>();
+
+        if (selectedDataset.equals("Dataset_P") || selectedDataset.equals("Ambos")) {
+            File datasetP = new File("Data/Dataset_P");
+            if (datasetP.exists() && datasetP.isDirectory()) {
+                selectedDirectories.add(datasetP);
+            } else {
+                outputArea.append("❌ Pasta 'Data/Dataset_P' não encontrada!\n");
+            }
+        }
+        if (selectedDataset.equals("Dataset_G") || selectedDataset.equals("Ambos")) {
+            File datasetG = new File("Data/Dataset_G");
+            if (datasetG.exists() && datasetG.isDirectory()) {
+                selectedDirectories.add(datasetG);
+            } else {
+                outputArea.append("❌ Pasta 'Data/Dataset_G' não encontrada!\n");
+            }
         }
 
-        if (!pastaData.exists() || !pastaData.isDirectory()) {
-            outputArea.append("❌ Pasta " + pastaData.getPath() + " não encontrada!\n");
+        if (selectedDirectories.isEmpty()) {
+            outputArea.append("❌ Nenhum dataset válido selecionado.\n");
             return;
         }
 
-        // Seleciona a estratégia de busca escolhida
         SearchStrategy estrategiaSelecionada = (SearchStrategy) estrategiaComboBox.getSelectedItem();
-        if (estrategiaSelecionada != null) {
-            outputArea.append("🔍 Usando estratégia: " + estrategiaSelecionada.toString() + "\n");
-            outputArea.append("📂 Dataset selecionado: " + datasetSelecionado + "\n");
-            estrategiaSelecionada.search(pastaData, nome, outputArea);
+        if (estrategiaSelecionada == null) {
+            outputArea.append("⚠️ Por favor, selecione uma estratégia de busca.\n");
+            return;
+        }
+
+        outputArea.append("🔍 Usando a estratégia: " + estrategiaSelecionada.toString() + "\n");
+
+        for (File dir : selectedDirectories) {
+            outputArea.append("🔸 Buscando no diretório: " + dir.getAbsolutePath() + "\n");
+            estrategiaSelecionada.search(dir, targetName, outputArea);
         }
     }
 }
