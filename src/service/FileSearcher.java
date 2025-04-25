@@ -13,16 +13,20 @@ public class FileSearcher {
             while ((line = reader.readLine()) != null) {
                 lineCount++;
                 if (line.trim().equalsIgnoreCase(targetName)) {
-                    logArea.append("[✔️ ENCONTRADO] '" + targetName + "' encontrado no arquivo: " + file.getName() + " (linha " + lineCount + ")\n");
+                    appendToLog(logArea, "[✔️ ENCONTRADO] '" + targetName + "' encontrado no arquivo: " + file.getName() + " (linha " + lineCount + ")\n");
                     return true;
                 }
             }
 
-            logArea.append("[🔍] '" + targetName + "' **não** encontrado no arquivo: " + file.getName() + "\n");
+            appendToLog(logArea, "[🔍] '" + targetName + "' **não** encontrado no arquivo: " + file.getName() + "\n");
         } catch (IOException e) {
-            logArea.append("[ERRO] Falha ao ler o arquivo: " + file.getName() + "\n");
+            appendToLog(logArea, "[ERRO] Falha ao ler o arquivo: " + file.getName() + "\n");
         }
 
         return false;
+    }
+
+    private static void appendToLog(JTextArea logArea, String message) {
+        SwingUtilities.invokeLater(() -> logArea.append(message));
     }
 }

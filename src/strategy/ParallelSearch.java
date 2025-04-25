@@ -23,22 +23,20 @@ public class ParallelSearch implements SearchStrategy {
             if (file.isFile()) {
                 int finalI = i;
                 threads[i] = new Thread(() -> {
-                    if (found.get()) {
-                        logArea.append("[THREAD " + finalI + "] Encerrada: nome já foi encontrado por outra thread.\n");
-                        return;
-                    }
+                    if (found.get()) return;
 
                     boolean result = FileSearcher.searchFile(file, targetName, logArea);
                     if (result) {
-                        found.set(true);
-                        logArea.append("[THREAD " + finalI + "] Nome encontrado! Interrompendo outras buscas.\n");
-                    } else {
-                        logArea.append("[THREAD " + finalI + "] Finalizou sem encontrar o nome.\n");
+                        if (found.compareAndSet(false, true)) { // Apenas a primeira que encontrar faz isso
+                            logArea.append("[THREAD " + finalI + "] Nome encontrado! Interrompendo outras buscas.\n");
+                        }
                     }
+                    // Se não encontrou, não imprime nada
                 }, "Thread-" + i);
                 threads[i].start();
             }
         }
+
         for (Thread thread : threads) {
             if (thread != null) {
                 try {
