@@ -162,15 +162,15 @@ public class BuscaUI {
         int threadsAntes = Thread.activeCount();
         long inicio = System.currentTimeMillis();
 
+        int totalThreadsUsadas = 0;
+
         for (File dir : selectedDirectories) {
             outputArea.append("🔸 Buscando no diretório: " + dir.getAbsolutePath() + "\n");
             estrategiaSelecionada.search(dir, targetName, outputArea);
+            totalThreadsUsadas += estrategiaSelecionada.getThreadCount();
         }
 
         long fim = System.currentTimeMillis();
-        int threadsDepois = Thread.activeCount();
-        int threadsUsadas = threadsDepois - threadsAntes;
-        if (threadsUsadas <= 0) threadsUsadas = 1;
 
         long tempoExecucao = fim - inicio;
 
@@ -179,9 +179,10 @@ public class BuscaUI {
                 .count() + 1;
 
         outputArea.append("⏱️ Tempo de execução: " + tempoExecucao + " ms\n");
-        outputArea.append("🧵 Threads utilizadas: " + threadsUsadas + "\n");
+        // Exibir a contagem total de threads usadas
+        outputArea.append("🧵 Threads utilizadas no total: " + totalThreadsUsadas + "\n");
 
-        resultados.add(new ResultadoBusca(targetName, estrategiaSelecionada.toString(), tempoExecucao, threadsUsadas, ordemExecucao));
+        resultados.add(new ResultadoBusca(targetName, estrategiaSelecionada.toString(), tempoExecucao, totalThreadsUsadas, ordemExecucao));
     }
 
 

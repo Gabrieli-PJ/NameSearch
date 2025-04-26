@@ -1,8 +1,16 @@
 package strategy;
 
-import javax.swing.*;
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.swing.JTextArea;
 
 public class PrevIndexSearch implements SearchStrategy {
 
@@ -10,11 +18,10 @@ public class PrevIndexSearch implements SearchStrategy {
     private final Map<File, List<String>> indexG = new HashMap<>();
     private boolean indexadoP = false;
     private boolean indexadoG = false;
-    private int threadsUsadas = 0;
+    private AtomicInteger threadCount = new AtomicInteger(0);
 
     @Override
     public void search(File directory, String targetName, JTextArea outputArea) {
-        int threadsAntes = Thread.activeCount();
 
         String path = directory.getAbsolutePath();
         Map<File, List<String>> indexParaBuscar = null;
@@ -61,9 +68,6 @@ public class PrevIndexSearch implements SearchStrategy {
         if (!encontrado) {
             outputArea.append("❌ Nome não encontrado nos arquivos.\n");
         }
-
-        int threadsDepois = Thread.activeCount();
-        threadsUsadas = threadsDepois - threadsAntes;
     }
 
     private void indexarArquivos(File directory, Map<File, List<String>> index) {
@@ -71,6 +75,8 @@ public class PrevIndexSearch implements SearchStrategy {
         if (files != null) {
             for (File file : files) {
                 if (file.isFile() && file.getName().endsWith(".txt")) {
+                    threadCount.incrementAndGet(); // Incrementa a contagem de threads
+                    
                     try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                         List<String> linhas = new ArrayList<>();
                         String linha;
@@ -88,7 +94,7 @@ public class PrevIndexSearch implements SearchStrategy {
 
     @Override
     public int getThreadCount() {
-        return threadsUsadas > 0 ? threadsUsadas : 1;
+        return threadCount.get();
     }
 
     @Override

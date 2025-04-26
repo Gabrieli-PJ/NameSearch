@@ -1,32 +1,40 @@
 package strategy;
 
-import service.FileSearcher;
-import javax.swing.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.swing.JTextArea;
+
+import service.FileSearcher;
 
 public class ExecutorServiceSearch implements SearchStrategy {
 
-    private int threadCount = 0;
+	private AtomicInteger threadCount = new AtomicInteger(0);
+
 
     @Override
     public void search(File directory, String targetName, JTextArea logArea) {
         File[] files = directory.listFiles();
         if (files == null) return;
+        threadCount.set(0);
 
         logArea.append("[INFO] Iniciando busca com ExecutorService na pasta: " + directory.getName() + "...\n");
 
         ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         List<Future<Boolean>> results = new ArrayList<>();
-        threadCount = 0;
 
         for (File file : files) {
             if (file.isFile()) {
                 Callable<Boolean> task = () -> FileSearcher.searchFile(file, targetName, logArea);
                 results.add(executor.submit(task));
-                threadCount++;
+                threadCount.incrementAndGet();
             }
         }
 
@@ -53,7 +61,7 @@ public class ExecutorServiceSearch implements SearchStrategy {
 
     @Override
     public int getThreadCount() {
-        return threadCount;
+        return threadCount.get();
     }
 
     @Override
