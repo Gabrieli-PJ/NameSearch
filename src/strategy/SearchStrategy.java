@@ -1,4 +1,3 @@
-// Atualizado: interface SearchStrategy
 package strategy;
 
 import java.io.File;

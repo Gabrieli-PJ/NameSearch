@@ -1,4 +1,3 @@
-// src/service/SearchStatus.java
 package service;
 
 public class SearchStatus {
