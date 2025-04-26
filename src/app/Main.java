@@ -6,7 +6,9 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import strategy.ExecutorServiceSearch;
 import strategy.ParallelSearch;
+import strategy.PrevIndexSearch;
 import strategy.SearchStrategy;
 import strategy.SequencialSearch;
 import ui.BuscaUI;
@@ -31,7 +33,9 @@ public class Main {
         javax.swing.SwingUtilities.invokeLater(() -> {
         	List<SearchStrategy> estrategias = List.of(
         		    new SequencialSearch(),
-        		    new ParallelSearch()
+        		    new ParallelSearch(),
+        		    new ExecutorServiceSearch(),
+        		    new PrevIndexSearch()
         		);
         		BuscaUI ui = new BuscaUI(estrategias);
 

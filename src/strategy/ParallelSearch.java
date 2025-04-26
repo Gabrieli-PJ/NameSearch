@@ -1,12 +1,13 @@
 package strategy;
 
 import service.FileSearcher;
-
 import javax.swing.*;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ParallelSearch implements SearchStrategy {
+
+    private int threadCount = 0;
 
     @Override
     public void search(File directory, String targetName, JTextArea logArea) {
@@ -17,23 +18,23 @@ public class ParallelSearch implements SearchStrategy {
 
         AtomicBoolean found = new AtomicBoolean(false);
         Thread[] threads = new Thread[files.length];
+        threadCount = 0;
 
         for (int i = 0; i < files.length; i++) {
             File file = files[i];
             if (file.isFile()) {
                 int finalI = i;
                 threads[i] = new Thread(() -> {
-                    if (found.get()) return;
-
+                    if (found.get()) {
+                        return;
+                    }
                     boolean result = FileSearcher.searchFile(file, targetName, logArea);
                     if (result) {
-                        if (found.compareAndSet(false, true)) { // Apenas a primeira que encontrar faz isso
-                            logArea.append("[THREAD " + finalI + "] Nome encontrado! Interrompendo outras buscas.\n");
-                        }
+                        found.set(true);
                     }
-                    // Se não encontrou, não imprime nada
                 }, "Thread-" + i);
                 threads[i].start();
+                threadCount++;
             }
         }
 
@@ -52,6 +53,11 @@ public class ParallelSearch implements SearchStrategy {
         } else {
             logArea.append("[INFO] Busca paralela encerrada com sucesso.\n\n");
         }
+    }
+
+    @Override
+    public int getThreadCount() {
+        return threadCount;
     }
 
     @Override

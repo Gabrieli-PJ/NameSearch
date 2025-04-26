@@ -103,9 +103,19 @@ public class BuscaUI {
 
         outputArea.append("🔍 Usando a estratégia: " + estrategiaSelecionada.toString() + "\n");
 
+        long startTime = System.currentTimeMillis();
+
         for (File dir : selectedDirectories) {
             outputArea.append("🔸 Buscando no diretório: " + dir.getAbsolutePath() + "\n");
             estrategiaSelecionada.search(dir, targetName, outputArea);
         }
+
+        long endTime = System.currentTimeMillis();
+        long elapsedTime = endTime - startTime;
+
+        outputArea.append("\n⏱️ Tempo de execução: " + elapsedTime + " ms\n");
+        outputArea.append("\uD83D\uDD27 Número de threads utilizadas: " + estrategiaSelecionada.getThreadCount() + "\n\n");
     }
+
+
 }
