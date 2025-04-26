@@ -119,11 +119,16 @@ public class BuscaUI {
 
     private void executarBusca() {
         outputArea.setText("");
-        String targetName = nomeField.getText().trim();
+        String nomesInput = nomeField.getText().trim();
 
-        if (targetName.isEmpty()) {
+        if (nomesInput.isEmpty()) {
             outputArea.append("⚠️ Por favor, insira um nome para buscar.\n");
             return;
+        }
+
+        String[] nomesParaBuscar = nomesInput.split(";");
+        for (int i = 0; i < nomesParaBuscar.length; i++) {
+            nomesParaBuscar[i] = nomesParaBuscar[i].trim();
         }
 
         String selectedDataset = (String) datasetComboBox.getSelectedItem();
@@ -159,31 +164,44 @@ public class BuscaUI {
 
         outputArea.append("🔍 Usando a estratégia: " + estrategiaSelecionada.toString() + "\n");
 
-        int threadsAntes = Thread.activeCount();
-        long inicio = System.currentTimeMillis();
-
         int totalThreadsUsadas = 0;
+        long inicioGeral = System.currentTimeMillis();
 
-        for (File dir : selectedDirectories) {
-            outputArea.append("🔸 Buscando no diretório: " + dir.getAbsolutePath() + "\n");
-            estrategiaSelecionada.search(dir, targetName, outputArea);
-            totalThreadsUsadas += estrategiaSelecionada.getThreadCount();
+        for (String nome : nomesParaBuscar) {
+            if (nome.isEmpty()) continue;
+
+            outputArea.append("\n🔎 Buscando pelo nome: '" + nome + "'\n");
+
+            long inicio = System.currentTimeMillis();
+            int threadsUsadas = 0;
+
+            for (File dir : selectedDirectories) {
+                outputArea.append("🔸 Buscando no diretório: " + dir.getAbsolutePath() + "\n");
+                estrategiaSelecionada.search(dir, nome, outputArea);
+                threadsUsadas += estrategiaSelecionada.getThreadCount();
+            }
+
+            long fim = System.currentTimeMillis();
+            long tempoExecucao = fim - inicio;
+
+            int ordemExecucao = (int) resultados.stream()
+                    .filter(r -> r.getNomeBuscado().equals(nome) && r.getEstrategiaNome().equals(estrategiaSelecionada.toString()))
+                    .count() + 1;
+
+            outputArea.append("⏱️ Tempo de execução: " + tempoExecucao + " ms\n");
+            outputArea.append("🧵 Threads utilizadas para '" + nome + "': " + threadsUsadas + "\n");
+
+            resultados.add(new ResultadoBusca(nome, estrategiaSelecionada.toString(), tempoExecucao, threadsUsadas, ordemExecucao));
+
+            totalThreadsUsadas += threadsUsadas;
         }
 
-        long fim = System.currentTimeMillis();
-
-        long tempoExecucao = fim - inicio;
-
-        int ordemExecucao = (int) resultados.stream()
-                .filter(r -> r.getNomeBuscado().equals(targetName) && r.getEstrategiaNome().equals(estrategiaSelecionada.toString()))
-                .count() + 1;
-
-        outputArea.append("⏱️ Tempo de execução: " + tempoExecucao + " ms\n");
-        // Exibir a contagem total de threads usadas
-        outputArea.append("🧵 Threads utilizadas no total: " + totalThreadsUsadas + "\n");
-
-        resultados.add(new ResultadoBusca(targetName, estrategiaSelecionada.toString(), tempoExecucao, totalThreadsUsadas, ordemExecucao));
+        long fimGeral = System.currentTimeMillis();
+        outputArea.append("\n✅ Busca concluída para todos os nomes!\n");
+        outputArea.append("⏱️ Tempo total da aplicação: " + (fimGeral - inicioGeral) + " ms\n");
+        outputArea.append("🧵 Threads totais utilizadas: " + totalThreadsUsadas + "\n");
     }
+
 
 
     private void mostrarComparacao() {
@@ -192,21 +210,33 @@ public class BuscaUI {
             return;
         }
 
-        Map<String, List<ResultadoBusca>> agrupadosPorNome = new HashMap<>();
+        Map<String, List<ResultadoBusca>> agrupados = new HashMap<>();
         for (ResultadoBusca r : resultados) {
-            agrupadosPorNome.computeIfAbsent(r.getNomeBuscado(), k -> new ArrayList<>()).add(r);
+            String chave = r.getOrdemExecucao() + "-" + r.getEstrategiaNome();
+            agrupados.computeIfAbsent(chave, k -> new ArrayList<>()).add(r);
         }
 
         outputArea.setText("🔎 Comparação de pesquisas:\n");
 
-        for (Map.Entry<String, List<ResultadoBusca>> entry : agrupadosPorNome.entrySet()) {
-            outputArea.append("\nNome pesquisado: " + entry.getKey() + "\n");
-            for (ResultadoBusca r : entry.getValue()) {
-                outputArea.append("\n- " + r.getEstrategiaNome() + " (Tempo " + r.getOrdemExecucao() + ")\n");
+        for (Map.Entry<String, List<ResultadoBusca>> entry : agrupados.entrySet()) {
+            List<ResultadoBusca> buscas = entry.getValue();
+            if (buscas.isEmpty()) continue;
+
+            ResultadoBusca referencia = buscas.get(0);
+
+            outputArea.append("\n🔸 Estratégia: " + referencia.getEstrategiaNome() + " (Execução " + referencia.getOrdemExecucao() + ")\n");
+
+            long somaTempos = 0;
+            for (ResultadoBusca r : buscas) {
+                outputArea.append("- Nome: " + r.getNomeBuscado() + "\n");
                 outputArea.append("  ⏱️ Tempo: " + r.getTempoExecucaoMs() + " ms\n");
                 outputArea.append("  🧵 Threads: " + r.getThreadsUsadas() + "\n");
+                somaTempos += r.getTempoExecucaoMs();
             }
+
+            outputArea.append("🧮 Soma dos tempos: " + somaTempos + " ms\n");
         }
     }
+
 
 }
