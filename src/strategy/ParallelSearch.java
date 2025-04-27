@@ -27,7 +27,7 @@ public class ParallelSearch implements SearchStrategy {
 	    	    File file = files[i];
 	    	    if (file.isFile()) {
 	    	        threads[i] = new Thread(() -> {
-	    	            threadCount.incrementAndGet(); // Incrementa ao iniciar
+	    	            threadCount.incrementAndGet();
 	    	            if (found.get()) {
 	    	                return;
 	    	            }

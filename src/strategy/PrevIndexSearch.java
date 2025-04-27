@@ -75,7 +75,7 @@ public class PrevIndexSearch implements SearchStrategy {
         if (files != null) {
             for (File file : files) {
                 if (file.isFile() && file.getName().endsWith(".txt")) {
-                    threadCount.incrementAndGet(); // Incrementa a contagem de threads
+                    threadCount.incrementAndGet();
                     
                     try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                         List<String> linhas = new ArrayList<>();

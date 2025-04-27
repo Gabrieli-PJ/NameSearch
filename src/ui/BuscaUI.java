@@ -14,6 +14,7 @@ import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -31,16 +32,20 @@ public class BuscaUI {
     private final JTextArea outputArea;
     private final JComboBox<SearchStrategy> estrategiaComboBox;
     private final JComboBox<String> datasetComboBox;
+    private final JTextField datasetPField;
+    private final JTextField datasetGField;
     private final List<ResultadoBusca> resultados = new ArrayList<>();
 
     public BuscaUI(List<SearchStrategy> estrategias) {
-
         frame = new JFrame("🔎 Buscar Nomes");
         nomeField = new JTextField(20);
         outputArea = new JTextArea(15, 50);
         estrategiaComboBox = new JComboBox<>();
         String[] datasetOptions = {"Dataset_P", "Dataset_G", "Ambos"};
         datasetComboBox = new JComboBox<>(datasetOptions);
+
+        datasetPField = new JTextField("C://Users/gabst/Downloads/dataset_p", 20);
+        datasetGField = new JTextField("C://Users/gabst/Downloads/dataset_g", 20);
 
         for (SearchStrategy estrategia : estrategias) {
             estrategiaComboBox.addItem(estrategia);
@@ -63,43 +68,84 @@ public class BuscaUI {
         gbc.anchor = GridBagConstraints.WEST;
 
         int y = 0;
-
-        // Nome a buscar
+        
+        gbc.gridy = y;
         gbc.gridx = 0;
+        inputPanel.add(new JLabel("Caminho Dataset_P:"), gbc);
+
+        gbc.gridx = 1;
+        inputPanel.add(datasetPField, gbc);
+
+        JButton selecionarPButton = new JButton("Selecionar Pasta");
+        gbc.gridx = 2;
+        inputPanel.add(selecionarPButton, gbc);
+
+        selecionarPButton.addActionListener(e -> escolherPasta(datasetPField));
+        
+        y++;
+
+        // Dataset_G path
+        gbc.gridy = y;
+        gbc.gridx = 0;
+        inputPanel.add(new JLabel("Caminho Dataset_G:"), gbc);
+
+        gbc.gridx = 1;
+        inputPanel.add(datasetGField, gbc);
+
+        JButton selecionarGButton = new JButton("Selecionar Pasta");
+        gbc.gridx = 2;
+        inputPanel.add(selecionarGButton, gbc);
+
+        selecionarGButton.addActionListener(e -> escolherPasta(datasetGField));
+        
+        y--;
+        
+        // Nome a buscar
+        gbc.gridx = 3;
         gbc.gridy = y;
         inputPanel.add(new JLabel("Nome a buscar:"), gbc);
 
-        gbc.gridx = 1;
+        gbc.gridx = 4;
         inputPanel.add(nomeField, gbc);
         
-        // Dataset
-        gbc.gridx = 2;
+        y++;
+
+        // Dataset escolha
+        gbc.gridx = 3;
+        gbc.gridy = y;
         inputPanel.add(new JLabel("Dataset:"), gbc);
 
-        gbc.gridx = 3;
+        gbc.gridx = 4;
+        gbc.gridy = y;
         inputPanel.add(datasetComboBox, gbc);
-        
+
         y++;
+
         // Algoritmo
         gbc.gridy = y;
         gbc.gridx = 0;
         inputPanel.add(new JLabel("Algoritmo:"), gbc);
 
-        gbc.gridy = y;
         gbc.gridx = 1;
         inputPanel.add(estrategiaComboBox, gbc);
 
         // Botões
         JButton buscarButton = new JButton("🔍 Buscar");
         JButton compararButton = new JButton("📊 Comparar");
-
-
-        gbc.gridy = y;
+        JButton speedupButton = new JButton("⚡ Medir SpeedUp");
         gbc.gridx = 2;
+        gbc.anchor = GridBagConstraints.LINE_END;
         inputPanel.add(buscarButton, gbc);
 
         gbc.gridx = 3;
+        gbc.anchor = GridBagConstraints.LINE_END;
         inputPanel.add(compararButton, gbc);
+
+        gbc.gridx = 4;
+        gbc.anchor = GridBagConstraints.LINE_START;
+        inputPanel.add(speedupButton, gbc);
+
+        speedupButton.addActionListener(e -> abrirTelaSpeedUp());
 
         // Área de saída
         outputArea.setEditable(false);
@@ -115,6 +161,16 @@ public class BuscaUI {
         // Listeners
         buscarButton.addActionListener(e -> executarBusca());
         compararButton.addActionListener(e -> mostrarComparacao());
+    }
+
+    private void escolherPasta(JTextField targetField) {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        int resultado = chooser.showOpenDialog(frame);
+        if (resultado == JFileChooser.APPROVE_OPTION) {
+            File selectedDirectory = chooser.getSelectedFile();
+            targetField.setText(selectedDirectory.getAbsolutePath());
+        }
     }
 
     private void executarBusca() {
@@ -135,19 +191,19 @@ public class BuscaUI {
         List<File> selectedDirectories = new ArrayList<>();
 
         if (selectedDataset.equals("Dataset_P") || selectedDataset.equals("Ambos")) {
-            File datasetP = new File("Data/Dataset_P");
+            File datasetP = new File(datasetPField.getText());
             if (datasetP.exists() && datasetP.isDirectory()) {
                 selectedDirectories.add(datasetP);
             } else {
-                outputArea.append("❌ Pasta 'Data/Dataset_P' não encontrada!\n");
+                outputArea.append("❌ Pasta 'Dataset_P' não encontrada no caminho informado!\n");
             }
         }
         if (selectedDataset.equals("Dataset_G") || selectedDataset.equals("Ambos")) {
-            File datasetG = new File("Data/Dataset_G");
+            File datasetG = new File(datasetGField.getText());
             if (datasetG.exists() && datasetG.isDirectory()) {
                 selectedDirectories.add(datasetG);
             } else {
-                outputArea.append("❌ Pasta 'Data/Dataset_G' não encontrada!\n");
+                outputArea.append("❌ Pasta 'Dataset_G' não encontrada no caminho informado!\n");
             }
         }
 
@@ -176,7 +232,6 @@ public class BuscaUI {
             int threadsUsadas = 0;
 
             for (File dir : selectedDirectories) {
-                outputArea.append("🔸 Buscando no diretório: " + dir.getAbsolutePath() + "\n");
                 estrategiaSelecionada.search(dir, nome, outputArea);
                 threadsUsadas += estrategiaSelecionada.getThreadCount();
             }
@@ -188,8 +243,8 @@ public class BuscaUI {
                     .filter(r -> r.getNomeBuscado().equals(nome) && r.getEstrategiaNome().equals(estrategiaSelecionada.toString()))
                     .count() + 1;
 
-            outputArea.append("⏱️ Tempo de execução: " + tempoExecucao + " ms\n");
-            outputArea.append("🧵 Threads utilizadas para '" + nome + "': " + threadsUsadas + "\n");
+            outputArea.append("Tempo de execução: " + tempoExecucao + " ms\n");
+            outputArea.append("Threads utilizadas para '" + nome + "': " + threadsUsadas + "\n");
 
             resultados.add(new ResultadoBusca(nome, estrategiaSelecionada.toString(), tempoExecucao, threadsUsadas, ordemExecucao));
 
@@ -197,12 +252,10 @@ public class BuscaUI {
         }
 
         long fimGeral = System.currentTimeMillis();
-        outputArea.append("\n✅ Busca concluída para todos os nomes!\n");
-        outputArea.append("⏱️ Tempo total da aplicação: " + (fimGeral - inicioGeral) + " ms\n");
-        outputArea.append("🧵 Threads totais utilizadas: " + totalThreadsUsadas + "\n");
+        outputArea.append("\nBusca concluída para todos os nomes!\n");
+        outputArea.append("Tempo total da aplicação: " + (fimGeral - inicioGeral) + " ms\n");
+        outputArea.append("Threads totais utilizadas: " + totalThreadsUsadas + "\n");
     }
-
-
 
     private void mostrarComparacao() {
         if (resultados.isEmpty()) {
@@ -229,14 +282,16 @@ public class BuscaUI {
             long somaTempos = 0;
             for (ResultadoBusca r : buscas) {
                 outputArea.append("- Nome: " + r.getNomeBuscado() + "\n");
-                outputArea.append("  ⏱️ Tempo: " + r.getTempoExecucaoMs() + " ms\n");
-                outputArea.append("  🧵 Threads: " + r.getThreadsUsadas() + "\n");
+                outputArea.append("Tempo: " + r.getTempoExecucaoMs() + " ms\n");
+                outputArea.append("Threads: " + r.getThreadsUsadas() + "\n");
                 somaTempos += r.getTempoExecucaoMs();
             }
 
-            outputArea.append("🧮 Soma dos tempos: " + somaTempos + " ms\n");
+            outputArea.append("Soma dos tempos: " + somaTempos + " ms\n");
         }
     }
 
-
+    private void abrirTelaSpeedUp() {
+        new SpeedUpUI(resultados);
+    }
 }
