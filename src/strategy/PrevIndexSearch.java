@@ -26,7 +26,7 @@ public class PrevIndexSearch implements SearchStrategy {
         String path = directory.getAbsolutePath();
         Map<File, List<String>> indexParaBuscar = null;
 
-        if (path.contains("Dataset_P")) {
+        if (path.contains("dataset_p")) {
             if (!indexadoP) {
                 outputArea.append("📚 Indexando arquivos de Dataset_P...\n");
                 indexarArquivos(directory, indexP);
@@ -34,7 +34,7 @@ public class PrevIndexSearch implements SearchStrategy {
                 outputArea.append("✅ Indexação de Dataset_P concluída.\n");
             }
             indexParaBuscar = indexP;
-        } else if (path.contains("Dataset_G")) {
+        } else if (path.contains("dataset_g")) {
             if (!indexadoG) {
                 outputArea.append("📚 Indexando arquivos de Dataset_G...\n");
                 indexarArquivos(directory, indexG);

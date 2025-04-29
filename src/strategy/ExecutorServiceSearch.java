@@ -28,6 +28,9 @@ public class ExecutorServiceSearch implements SearchStrategy {
         logArea.append("[INFO] Iniciando busca com ExecutorService na pasta: " + directory.getName() + "...\n");
 
         ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        int proc = Runtime.getRuntime().availableProcessors();
+        
+        logArea.append("a: " + proc);
         List<Future<Boolean>> results = new ArrayList<>();
 
         for (File file : files) {
